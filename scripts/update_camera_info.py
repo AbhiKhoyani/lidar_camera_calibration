@@ -32,13 +32,13 @@ PKG = 'lidar_camera_calibration'
 import roslib; roslib.load_manifest(PKG)
 import rosbag
 import rospy
-
+from sensor_msgs.msg import CameraInfo
 
 def load_calibration_data(filename):
     # Open calibration file
     with open(filename, 'r') as stream:
         try:
-            calibration = yaml.load(stream)
+            calibration = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             rospy.logerr(exc)
             sys.exit(1)
@@ -58,7 +58,8 @@ if __name__ == '__main__':
     else:
         BAG_FILE = sys.argv[1]
         CALIB_FILE = sys.argv[2]
-        CAMERA_INFO = '/sensors/camera/camera_info'
+        IMAGE_TOPIC = '/primary_camera/image_color/compressed'
+        CAMERA_INFO = '/primary_camera/camera_info'
 
     # Load ROSBAG file
     rospy.loginfo('Bag Filename: %s', BAG_FILE)
@@ -68,21 +69,27 @@ if __name__ == '__main__':
     folder = os.path.dirname(BAG_FILE)
     output_name = os.path.splitext(os.path.basename(BAG_FILE))[0] + '_updated.bag'
     OUTPUT_FILE = os.path.join(folder, output_name)
-    os.mknod(OUTPUT_FILE)
+    # os.mknod(OUTPUT_FILE)
     output = rosbag.Bag(OUTPUT_FILE, 'w')
 
     # Load calibration data
     calibration = load_calibration_data(CALIB_FILE)
+    cam_info = CameraInfo()
+    cam_info.distortion_model = 'plumb_bob'
+    cam_info.width = calibration['image_width']
+    cam_info.height = calibration['image_height']
+    cam_info.D = calibration['distortion_coefficients']['data']
+    cam_info.K = calibration['camera_matrix']['data']
+    cam_info.P = calibration['projection_matrix']['data']
 
     # Update calibration data
-    rospy.loginfo('Updating %s data...' % CAMERA_INFO)
+    rospy.loginfo('Adding %s data...' % CAMERA_INFO)
     for topic, msg, t in bag.read_messages():
-        if topic == CAMERA_INFO:
-            msg.D = calibration['distortion_coefficients']['data']
-            msg.K = calibration['camera_matrix']['data']
-            msg.R = calibration['rectification_matrix']['data']
-            msg.P = calibration['projection_matrix']['data']
         output.write(topic, msg, msg.header.stamp if msg._has_header else t)
+        if topic == IMAGE_TOPIC:
+            cam_info.header = msg.header
+            output.write(CAMERA_INFO, cam_info, msg.header.stamp if msg._has_header else t)
+        
     rospy.loginfo('Done')
 
     # Close bag file

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-    <arg name="camera" default="/sensors/camera" />
+    <arg name="camera" default="/primary_camera" />
 
     <!-- Play rosbag record -->
     <include file="$(find lidar_camera_calibration)/launch/play_rosbag.launch">
-        <arg name="bagfile" value="2016-11-22-14-32-13_test_updated.bag" />
+        <arg name="bagfile" value="calibration_larger_primary.bag" />
     </include>
 
     <!-- Nodelet manager for this pipeline -->

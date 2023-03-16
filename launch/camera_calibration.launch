@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
-    <arg name="camera" default="/sensors/camera" />
-    <arg name="size" default="7x5" />
-    <arg name="square" default="0.05" />
-    <arg name="k-coefficients" default="2" />
+    <arg name="camera" default="/primary_camera" />
+    <arg name="size" default="4x3" />
+    <arg name="square" default="0.145" />
+    <arg name="k-coefficients" default="3" />
 
     <!-- Play rosbag record -->
     <include file="$(find lidar_camera_calibration)/launch/play_rosbag.launch">
-        <arg name="bagfile" value="2016-11-22-14-32-13_test.bag" />
+        <!-- <arg name="bagfile" value="calibration_7205_3.bag" /> -->
+        <arg name="bagfile" value="calibration_larger_primary.bag" />
+        <!-- <arg name="bagfile" value="calibration_smaller_primary.bag" /> -->
     </include>
 
     <!-- Run camera calibration -->

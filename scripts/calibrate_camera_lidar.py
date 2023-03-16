@@ -93,7 +93,7 @@ Outputs: None
 '''
 def handle_keyboard():
     global KEY_LOCK, PAUSE
-    key = raw_input('Press [ENTER] to pause and pick points\n')
+    key = input('Press [ENTER] to pause and pick points\n')
     with KEY_LOCK: PAUSE = True
 
 
@@ -233,10 +233,10 @@ def extract_points_3D(velodyne, now):
     if OUSTER_LIDAR: points = points.reshape(-1, 9)[:, :4]
 
     # Select points within chessboard range
-    inrange = np.where((points[:, 0] > 0) &
-                       (points[:, 0] < 2.5) &
-                       (np.abs(points[:, 1]) < 2.5) &
-                       (points[:, 2] < 2))
+    xmin, xmax, ymin, ymax, zmin, zmax = 4, 8, -3, 3, -1, 1 
+    inrange = np.where((points[:, 0] > xmin) & (points[:, 0] < xmax) &
+                       (points[:, 1] > ymin) & (points[:, 1] < ymax) &
+                       (points[:, 2] > zmin) & (points[:, 2] < zmax))
     points = points[inrange[0]]
     print(points.shape)
     if points.shape[0] > 5:
@@ -517,7 +517,7 @@ def listener(camera_info, image_color, velodyne_points, camera_lidar=None):
 
     # Synchronize the topics by time
     ats = message_filters.ApproximateTimeSynchronizer(
-        [image_sub, info_sub, velodyne_sub], queue_size=5, slop=0.1)
+        [image_sub, info_sub, velodyne_sub], queue_size=15, slop=0.1)
     ats.registerCallback(callback, image_pub)
 
     # Keep python from exiting until this node is stopped
@@ -531,9 +531,9 @@ if __name__ == '__main__':
 
     # Calibration mode, rosrun
     if sys.argv[1] == '--calibrate':
-        camera_info = '/sensors/camera/camera_info'
-        image_color = '/sensors/camera/image_color'
-        velodyne_points = '/sensors/velodyne_points'
+        camera_info = '/primary_camera/camera_info'
+        image_color = '/primary_camera/image_color'
+        velodyne_points = '/velodyne_points'
         camera_lidar = None
         PROJECT_MODE = False
     # Projection mode, run from launch file
